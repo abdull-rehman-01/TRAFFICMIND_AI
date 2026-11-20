@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAFFICMIND AI | Smart Traffic Control</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="brand">
+        <div class="logo">🚦</div>
+        <div>
+            <h2>TRAFFICMIND <span>AI</span></h2>
+            <p>ADAPTIVE TRAFFIC MANAGEMENT SYSTEM</p>
+        </div>
+    </div>
+    <div class="live-status">
+        <span class="live-dot"></span> SYSTEM ONLINE
+    </div>
+</header>
+
+<main class="container">
+
+    <section class="hero">
+        <div>
+            <p class="eyebrow">SMART CITY · INTELLIGENT MOBILITY</p>
+            <h1>Smarter signals.<br><span>Faster journeys.</span></h1>
+            <p class="subtitle">
+                AI-powered adaptive traffic signal optimization
+                using dynamic vehicle density analysis.
+            </p>
+        </div>
+        <div class="system-tag">LIVE SIMULATION</div>
+    </section>
+
+    <section class="stats">
+        <div class="stat-card">
+            <p>ACTIVE GREEN SIGNAL</p>
+            <h2 id="activeLane">NORTH</h2>
+            <small>Currently moving traffic</small>
+        </div>
+        <div class="stat-card">
+            <p>TOTAL VEHICLES</p>
+            <h2 id="totalVehicles">22</h2>
+            <small>Across all approaches</small>
+        </div>
+        <div class="stat-card">
+            <p>VEHICLES CLEARED</p>
+            <h2 id="clearedVehicles">0</h2>
+            <small>During simulation</small>
+        </div>
+        <div class="stat-card">
+            <p>CONTROL MODE</p>
+            <h2 id="controlMode">ADAPTIVE</h2>
+            <small>Signal optimization</small>
+        </div>
+    </section>
+
+    <section class="main-grid">
+
+        <div class="panel intersection-panel">
+            <div class="panel-heading">
+                <h2>Traffic Intersection</h2>
+                <span class="tag">FOUR-WAY JUNCTION</span>
+            </div>
+
+            <div class="intersection">
+
+                <div class="vertical-road"></div>
+                <div class="horizontal-road"></div>
+                <div class="center-road"></div>
+
+                <span class="road-label north">NORTH</span>
+                <span class="road-label south">SOUTH</span>
+                <span class="road-label east">EAST</span>
+                <span class="road-label west">WEST</span>
+
+                <div class="traffic-signal north-signal" id="signal-N">
+                    <i></i><i></i><i></i>
+                </div>
+
+                <div class="traffic-signal south-signal" id="signal-S">
+                    <i></i><i></i><i></i>
+                </div>
+
+                <div class="traffic-signal east-signal" id="signal-E">
+                    <i></i><i></i><i></i>
+                </div>
+
+                <div class="traffic-signal west-signal" id="signal-W">
+                    <i></i><i></i><i></i>
+                </div>
+
+                <div class="vehicle-queue north-queue" id="queue-N"></div>
+                <div class="vehicle-queue south-queue" id="queue-S"></div>
+                <div class="vehicle-queue east-queue" id="queue-E"></div>
+                <div class="vehicle-queue west-queue" id="queue-W"></div>
+
+                <div class="center-label">AI<br>CONTROL</div>
+            </div>
+
+            <div class="lane-grid" id="laneGrid"></div>
+        </div>
+
+        <div class="panel control-panel">
+            <div class="panel-heading">
+                <h2>Signal Controller</h2>
+                <span class="tag blue">INTELLIGENT</span>
+            </div>
+
+            <div class="signal-info">
+                <p>CURRENT GREEN SIGNAL</p>
+                <h2 id="currentSignal">NORTH</h2>
+                <div class="timer" id="timer">12</div>
+                <p>Seconds remaining</p>
+                <div class="progress">
+                    <div id="progressBar"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="primary-btn" id="startBtn">
+                    ▶ Start Simulation
+                </button>
+                <button class="secondary-btn" id="stepBtn">
+                    Next Signal →
+                </button>
+                <button class="secondary-btn" id="addTrafficBtn">
+                    + Add Traffic
+                </button>
+                <button class="emergency-btn" id="emergencyBtn">
+                    🚑 Emergency Vehicle
+                </button>
+                <button class="reset-btn" id="resetBtn">
+                    Reset Simulation
+                </button>
+            </div>
+
+            <div class="mode-control">
+                <h3>Signal Control Mode</h3>
+                <div class="mode-buttons">
+                    <button id="adaptiveBtn" class="selected">
+                        Adaptive AI
+                    </button>
+                    <button id="fixedBtn">
+                        Fixed Time
+                    </button>
+                </div>
+            </div>
+
+            <div class="decision-box">
+                <p>AI DECISION</p>
+                <h3 id="decisionText">Analyzing traffic density...</h3>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="bottom-grid">
+
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>Traffic Density Analysis</h2>
+            </div>
+            <div id="densityBars"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>System Activity</h2>
+            </div>
+            <div class="activity-log" id="activityLog"></div>
+        </div>
+
+    </section>
+
+    <footer>
+        TRAFFICMIND AI · HACKATHON PROTOTYPE
+        <p>Simulation data only. Not connected to real traffic infrastructure.</p>
+    </footer>
+
+</main>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
