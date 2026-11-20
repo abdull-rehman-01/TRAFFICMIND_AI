@@ -12,10 +12,19 @@ const initialQueues = {
 };
 
 let queues = { ...initialQueues };
+
+let waitingTimes = {
+    N: 0,
+    E: 0,
+    S: 0,
+    W: 0
+};
+
 let currentLane = "N";
 let clearedVehicles = 0;
 let mode = "adaptive";
 let emergencyLane = null;
+
 let timer = 12;
 let phaseDuration = 12;
 let simulationInterval = null;
@@ -29,6 +38,7 @@ const directions = {
 
 const $ = id => document.getElementById(id);
 
+// Activity log
 function log(message) {
     const logBox = $("activityLog");
     const entry = document.createElement("div");
@@ -43,10 +53,10 @@ function log(message) {
     }
 }
 
+// Update traffic lights
 function renderSignals() {
     Object.keys(directions).forEach(direction => {
-        const signal = $(`signal-${direction}`);
-        const lights = signal.querySelectorAll("i");
+        const lights = $(`signal-${direction}`).querySelectorAll("i");
 
         lights.forEach(light => {
             light.className = "";
@@ -60,6 +70,7 @@ function renderSignals() {
     });
 }
 
+// Display vehicles
 function renderQueues() {
     Object.keys(directions).forEach(direction => {
         const container = $(`queue-${direction}`);
@@ -70,14 +81,13 @@ function renderQueues() {
 
         for (let i = 0; i < count; i++) {
             const vehicle = document.createElement("div");
-
             vehicle.className = "car";
-
             container.appendChild(vehicle);
         }
     });
 }
 
+// Display lane information
 function renderLanes() {
     $("laneGrid").innerHTML = Object.keys(directions)
         .map(direction => `
@@ -89,12 +99,13 @@ function renderLanes() {
                 <small>
                     ${direction === currentLane
                         ? "GREEN SIGNAL"
-                        : "WAITING"}
+                        : "WAITING: " + waitingTimes[direction] + "s"}
                 </small>
             </div>
         `).join("");
 }
 
+// Display density analysis
 function renderDensity() {
     const total = Object.values(queues).reduce(
         (sum, value) => sum + value,
@@ -123,19 +134,16 @@ function renderDensity() {
         }).join("");
 }
 
+// Refresh dashboard
 function updateDashboard() {
     const stats = getTrafficStatistics(queues);
 
     $("activeLane").textContent = directions[currentLane];
-
     $("totalVehicles").textContent = stats.totalVehicles;
-
     $("clearedVehicles").textContent = clearedVehicles;
-
     $("controlMode").textContent = mode.toUpperCase();
 
     $("currentSignal").textContent = directions[currentLane];
-
     $("timer").textContent = timer;
 
     $("progressBar").style.width =
@@ -147,16 +155,17 @@ function updateDashboard() {
     renderDensity();
 }
 
+// Ask intelligence engine for the next signal
 function changeSignal() {
     const decision = getTrafficDecision(
         queues,
         currentLane,
         mode,
-        emergencyLane
+        emergencyLane,
+        waitingTimes
     );
 
     currentLane = decision.lane;
-
     phaseDuration = decision.greenTime;
     timer = phaseDuration;
 
@@ -173,16 +182,27 @@ function changeSignal() {
     updateDashboard();
 }
 
+// One-second simulation cycle
 function tick() {
     timer--;
 
-    // Vehicles leave the road receiving green
+    // Increase waiting time for red-signal roads
+    Object.keys(directions).forEach(direction => {
+        if (direction !== currentLane) {
+            waitingTimes[direction]++;
+        }
+    });
+
+    // Reset waiting time for the green-signal road
+    waitingTimes[currentLane] = 0;
+
+    // Vehicles leave the green-signal road
     const cleared = Math.min(queues[currentLane], 2);
 
     queues[currentLane] -= cleared;
     clearedVehicles += cleared;
 
-    // Simulate new arriving vehicles
+    // Simulate incoming vehicles
     Object.keys(directions).forEach(direction => {
         if (Math.random() < 0.28) {
             queues[direction] = Math.min(
@@ -199,6 +219,7 @@ function tick() {
     }
 }
 
+// Start simulation
 function startSimulation() {
     if (simulationInterval) return;
 
@@ -209,6 +230,7 @@ function startSimulation() {
     log("Traffic simulation started.");
 }
 
+// Pause simulation
 function pauseSimulation() {
     clearInterval(simulationInterval);
     simulationInterval = null;
@@ -218,6 +240,7 @@ function pauseSimulation() {
     log("Traffic simulation paused.");
 }
 
+// Start / Pause button
 $("startBtn").addEventListener("click", () => {
     if (simulationInterval) {
         pauseSimulation();
@@ -226,11 +249,13 @@ $("startBtn").addEventListener("click", () => {
     }
 });
 
+// Manually change signal
 $("stepBtn").addEventListener("click", () => {
     pauseSimulation();
     changeSignal();
 });
 
+// Add simulated traffic
 $("addTrafficBtn").addEventListener("click", () => {
     const lanes = Object.keys(directions);
 
@@ -248,6 +273,7 @@ $("addTrafficBtn").addEventListener("click", () => {
     updateDashboard();
 });
 
+// Emergency vehicle priority
 $("emergencyBtn").addEventListener("click", () => {
     const lanes = Object.keys(directions).filter(
         direction => direction !== currentLane
@@ -257,7 +283,6 @@ $("emergencyBtn").addEventListener("click", () => {
         Math.floor(Math.random() * lanes.length)
     ];
 
-    // Ensure the emergency approach has a vehicle
     queues[emergencyLane] = Math.max(
         queues[emergencyLane],
         1
@@ -271,6 +296,7 @@ $("emergencyBtn").addEventListener("click", () => {
     updateDashboard();
 });
 
+// Adaptive control mode
 $("adaptiveBtn").addEventListener("click", () => {
     mode = "adaptive";
 
@@ -280,11 +306,12 @@ $("adaptiveBtn").addEventListener("click", () => {
     log("Adaptive traffic control activated.");
 
     $("decisionText").textContent =
-        "AI will select the busiest eligible lane.";
+        "Selecting road using vehicle density and waiting time.";
 
     updateDashboard();
 });
 
+// Fixed-time control mode
 $("fixedBtn").addEventListener("click", () => {
     mode = "fixed";
 
@@ -294,29 +321,130 @@ $("fixedBtn").addEventListener("click", () => {
     log("Fixed-time traffic control activated.");
 
     $("decisionText").textContent =
-        "Each road receives a fixed green duration.";
+        "Fixed-time signal rotation activated.";
 
     updateDashboard();
 });
 
+// Reset everything
 $("resetBtn").addEventListener("click", () => {
     pauseSimulation();
 
     queues = { ...initialQueues };
+
+    waitingTimes = {
+        N: 0,
+        E: 0,
+        S: 0,
+        W: 0
+    };
+
     currentLane = "N";
     clearedVehicles = 0;
     emergencyLane = null;
+
     timer = 12;
     phaseDuration = 12;
 
     $("activityLog").innerHTML = "";
+
+    $("decisionText").textContent =
+        "Traffic monitoring restarted.";
 
     log("Simulation reset.");
 
     updateDashboard();
 });
 
+// Initialize dashboard
 log("TRAFFICMIND AI initialized.");
-log("Traffic density monitoring started.");
+log("Adaptive traffic intelligence connected.");
+log("Vehicle density monitoring started.");
 
 updateDashboard();
+// =====================================
+// YOLO VIDEO DETECTION CONNECTION
+// =====================================
+
+const detectionForm = document.getElementById("detectionForm");
+
+if (detectionForm) {
+    detectionForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const videoInput = document.getElementById("trafficVideo");
+        const button = document.getElementById("detectButton");
+        const status = document.getElementById("detectionStatus");
+        const resultsPanel = document.getElementById("detectionResults");
+
+        const file = videoInput.files[0];
+
+        if (!file) {
+            status.textContent = "Please select a traffic video.";
+            return;
+        }
+
+        if (file.size > 100 * 1024 * 1024) {
+            status.textContent = "Video must be smaller than 100 MB.";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("video", file);
+
+        button.disabled = true;
+        button.textContent = "Analyzing...";
+        status.textContent = "Uploading video and detecting vehicles. Please wait...";
+        resultsPanel.hidden = true;
+
+        try {
+            const response = await fetch(
+                "http://127.0.0.1:5000/api/detect",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Detection failed.");
+            }
+
+            document.getElementById("totalVehicles").textContent =
+                data.total_vehicles;
+
+            document.getElementById("trafficDensity").textContent =
+                data.density;
+
+            document.getElementById("carCount").textContent =
+                data.counts.car;
+
+            document.getElementById("motorcycleCount").textContent =
+                data.counts.motorcycle;
+
+            document.getElementById("busCount").textContent =
+                data.counts.bus;
+
+            document.getElementById("truckCount").textContent =
+                data.counts.truck;
+
+            document.getElementById("framesProcessed").textContent =
+                data.frames_processed;
+
+            const processedVideo = document.getElementById("processedVideo");
+            processedVideo.src = data.video_url + "?t=" + Date.now();
+            processedVideo.load();
+
+            resultsPanel.hidden = false;
+            status.textContent = "Vehicle detection completed successfully!";
+
+        } catch (error) {
+            status.textContent = "Error: " + error.message;
+        } finally {
+            button.disabled = false;
+            button.textContent = "Analyze Traffic Video";
+        }
+    });
+}

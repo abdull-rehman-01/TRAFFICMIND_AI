@@ -185,5 +185,38 @@
 </main>
 
 <script type="module" src="script.js"></script>
+<section class="detection-panel">
+    <h2>AI Traffic Video Detection</h2>
+    <p>Upload a traffic video to detect and count vehicles using YOLO.</p>
+
+    <form id="detectionForm">
+        <input
+            type="file"
+            id="trafficVideo"
+            accept=".mp4,.avi,.mov,.mkv,video/*"
+            required
+        >
+
+        <button type="submit" id="detectButton">
+            Analyze Traffic Video
+        </button>
+    </form>
+
+    <p id="detectionStatus">Waiting for a video...</p>
+
+    <div id="detectionResults" hidden>
+        <h3>Detection Results</h3>
+        <p>Total vehicles: <strong id="totalVehicles">0</strong></p>
+        <p>Traffic density: <strong id="trafficDensity">—</strong></p>
+        <p>Cars: <strong id="carCount">0</strong></p>
+        <p>Motorcycles: <strong id="motorcycleCount">0</strong></p>
+        <p>Buses: <strong id="busCount">0</strong></p>
+        <p>Trucks: <strong id="truckCount">0</strong></p>
+        <p>Frames processed: <strong id="framesProcessed">0</strong></p>
+
+        <h3>Processed Video</h3>
+        <video id="processedVideo" controls width="100%"></video>
+    </div>
+</section>
 </body>
 </html>

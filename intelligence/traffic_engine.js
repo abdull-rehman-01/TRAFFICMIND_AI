@@ -5,19 +5,30 @@ const MIN_GREEN = 7;
 const MAX_GREEN = 25;
 const FIXED_GREEN = 15;
 
-// Calculate adaptive green duration
+// Calculate adaptive green signal duration
 export function calculateGreenTime(vehicleCount) {
-    return Math.min(
-        MAX_GREEN,
-        Math.max(MIN_GREEN, 7 + vehicleCount * 1.4)
+    return Math.round(
+        Math.min(
+            MAX_GREEN,
+            Math.max(MIN_GREEN, 7 + vehicleCount * 1.4)
+        )
     );
 }
 
-// Select the road with the highest vehicle density
-export function selectNextLane(queues, currentLane, emergencyLane = null) {
+// Calculate priority using vehicle density and waiting time
+export function calculatePriority(vehicleCount, waitingTime) {
+    return (vehicleCount * 2) + (waitingTime * 0.15);
+}
 
+// Select the next road
+export function selectNextLane(
+    queues,
+    currentLane,
+    emergencyLane = null,
+    waitingTimes = {}
+) {
     // Emergency vehicle receives priority
-    if (emergencyLane && queues[emergencyLane] !== undefined) {
+    if (emergencyLane && DIRECTIONS.includes(emergencyLane)) {
         return emergencyLane;
     }
 
@@ -25,37 +36,61 @@ export function selectNextLane(queues, currentLane, emergencyLane = null) {
         direction => direction !== currentLane
     );
 
-    candidates.sort((a, b) => queues[b] - queues[a]);
+    candidates.sort((a, b) => {
+        const scoreA = calculatePriority(
+            queues[a] || 0,
+            waitingTimes[a] || 0
+        );
+
+        const scoreB = calculatePriority(
+            queues[b] || 0,
+            waitingTimes[b] || 0
+        );
+
+        return scoreB - scoreA;
+    });
 
     return candidates[0];
 }
 
-// Main traffic decision engine
+// Main adaptive traffic decision engine
 export function getTrafficDecision(
     queues,
     currentLane,
     mode = "adaptive",
-    emergencyLane = null
+    emergencyLane = null,
+    waitingTimes = {}
 ) {
-    const nextLane = selectNextLane(
-        queues,
-        currentLane,
-        emergencyLane
-    );
+    let nextLane;
 
-    const vehicleCount = queues[nextLane];
+    if (emergencyLane && DIRECTIONS.includes(emergencyLane)) {
+        nextLane = emergencyLane;
+    } else if (mode === "fixed") {
+        const currentIndex = DIRECTIONS.indexOf(currentLane);
+
+        nextLane = DIRECTIONS[
+            (currentIndex + 1) % DIRECTIONS.length
+        ];
+    } else {
+        nextLane = selectNextLane(
+            queues,
+            currentLane,
+            null,
+            waitingTimes
+        );
+    }
+
+    const vehicleCount = queues[nextLane] || 0;
 
     const greenTime = mode === "fixed"
         ? FIXED_GREEN
         : calculateGreenTime(vehicleCount);
 
-    let reason;
-
-    if (emergencyLane === nextLane) {
-        reason = "Emergency vehicle priority activated.";
-    } else {
-        reason = `${vehicleCount} vehicles detected on ${nextLane}.`;
-    }
+    const reason = emergencyLane === nextLane
+        ? "Emergency priority activated."
+        : `${vehicleCount} vehicles and ${
+            waitingTimes[nextLane] || 0
+        } seconds waiting on ${nextLane}.`;
 
     return {
         lane: nextLane,
@@ -66,7 +101,7 @@ export function getTrafficDecision(
     };
 }
 
-// Calculate overall traffic density
+// Calculate total traffic density
 export function calculateDensity(queues) {
     const total = Object.values(queues).reduce(
         (sum, count) => sum + count,
@@ -79,7 +114,7 @@ export function calculateDensity(queues) {
     return "High";
 }
 
-// Get traffic statistics
+// Generate traffic statistics
 export function getTrafficStatistics(queues) {
     const totalVehicles = Object.values(queues).reduce(
         (sum, count) => sum + count,
